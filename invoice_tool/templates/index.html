@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf }}">
+  <title>发票归集</title>
+  <link rel="stylesheet" href="/static/workflow.css">
+  <script type="module" src="/static/app.js"></script>
+</head>
+<body>
+  <header class="top"><div class="wrap">
+    <span class="brand">发票归集</span>
+    <button class="button" id="history-toggle" type="button" aria-controls="history" aria-expanded="false">历史任务</button>
+  </div></header>
+  <main class="wrap">
+    <section id="history" class="panel form-panel" hidden aria-label="历史任务">
+      <h2>历史任务</h2>
+      <div id="history-list"></div>
+      <div class="history-pages">
+        <button class="button" id="history-prev">上一页</button><span id="history-page"></span>
+        <button class="button" id="history-next">下一页</button><button class="button" id="refresh-history">刷新</button>
+      </div>
+    </section>
+    <nav class="steps" aria-label="归集步骤">
+      <span class="step" id="step-input" aria-current="step"><span class="step-number">01</span>选择资料</span>
+      <span class="step" id="step-review"><span class="step-number">02</span>核对匹配</span>
+      <span class="step" id="step-output"><span class="step-number">03</span>导出归集</span>
+    </nav>
+    <div id="feedback" role="status" aria-live="polite" hidden></div>
+    <section id="input-panel" aria-labelledby="input-title">
+      <div class="page-title"><h1 id="input-title">选择资料</h1></div>
+      <form id="upload-form">
+        <div class="file-grid">
+          <div class="panel file-panel">
+            <h2><label for="workbook">账单表格</label></h2>
+            <input id="workbook" name="workbook" type="file" accept=".xlsx" required>
+            <p id="workbook-detail" class="muted file-state" role="status"></p>
+          </div>
+          <div class="panel file-panel">
+            <h2>发票文件</h2>
+            <fieldset>
+              <legend class="visually-hidden">PDF 导入方式</legend>
+              <div class="segments">
+                <label><input class="visually-hidden" type="radio" name="mode" value="pdfs" checked>文件</label>
+                <label><input class="visually-hidden" type="radio" name="mode" value="folder">文件夹</label>
+              </div>
+            </fieldset>
+            <input id="pdfs" type="file" class="visually-hidden" tabindex="-1" accept=".pdf" multiple aria-label="PDF 文件">
+            <input id="folder" type="file" class="visually-hidden" tabindex="-1" webkitdirectory multiple aria-label="PDF 文件夹">
+            <button class="button" id="pdf-picker" type="button">选择 PDF 文件</button>
+            <p id="pdf-detail" class="muted file-state" role="status">未选择文件</p>
+          </div>
+        </div>
+        <div class="actions"><button class="button primary action-right" id="analyze" type="submit">开始匹配</button></div>
+      </form>
+    </section>
+    <section id="result-panel" hidden aria-labelledby="result-title">
+      <div class="page-title">
+        <div>
+          <h1 id="result-title">核对匹配</h1>
+          <button id="workbook-link" class="workbook-link" type="button">
+            <span id="task-name"></span><span class="arrow" aria-hidden="true">↗</span>
+          </button>
+        </div>
+        <span id="match-status" class="badge ready" hidden>匹配完成</span>
+      </div>
+      <div id="completion" class="complete" hidden>
+        <div><h2>归集完成</h2><p id="completion-summary"></p></div>
+        <button class="button primary" id="download" type="button">下载全部结果</button>
+      </div>
+      <div id="summary" class="metrics" aria-label="匹配概况" hidden></div>
+      <div id="issue-banner"></div>
+      <section id="project-panel" class="panel" aria-labelledby="group-title" hidden>
+        <div class="section-head">
+          <h2 id="group-title">项目清单</h2>
+          <div class="segments" role="group" aria-label="筛选项目">
+            <button id="filter-all" aria-pressed="true" type="button">全部</button>
+            <button id="filter-issues" aria-pressed="false" type="button">待处理</button>
+          </div>
+        </div>
+        <div id="groups"></div>
+      </section>
+      <details id="issues-panel" class="panel issues" hidden>
+        <summary id="issues-title">异常与清洗记录</summary>
+        <div id="issues-list"></div>
+      </details>
+      <div class="actions">
+        <button class="button" id="new-task" type="button">返回选择资料</button>
+        <button class="button action-right" id="refresh-task" type="button" hidden>刷新状态</button>
+        <button class="button primary action-right" id="export" type="button" hidden>按项目合并</button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
