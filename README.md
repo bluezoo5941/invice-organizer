@@ -1,52 +1,77 @@
 # 发票归集
 
-把机票 Excel 账单与 PDF 发票匹配，按项目导出合并后的 PDF。支持在本机浏览器核对缺件、重复和归属冲突，查看历史任务并下载原始账单副本。
+> 导入一份机票账单和一批 PDF，按项目生成可核对的发票包。
 
-## 在 Windows 上运行
+发票归集是一个在 Windows 本机运行的小工具。它按**乘机人姓名和完整票号**匹配 Excel 记录与 PDF 文件名，让你先核对缺件、重复和归属冲突，再合并资料齐全的项目。
 
-安装 Python 3.12 或更新版本。在项目根目录打开 PowerShell，执行：
+## 快速开始
+
+需要 **Windows** 和 **Python 3.12 或更新版本**。在项目根目录打开 PowerShell，逐行运行：
 
 ```powershell
-./setup.ps1
-./start.cmd
+.\setup.ps1
+.\start.cmd
 ```
 
-首次安装依赖需要联网。启动后访问 [本地工作台](http://127.0.0.1:8765/)，关闭启动窗口可停止服务。
+首次安装依赖需要联网。安装完成后，日常使用双击 `start.cmd` 即可。浏览器会打开 [本地工作台](http://127.0.0.1:8765/)，关闭启动窗口即可停止服务。
 
-也可以通过 PowerShell 手动创建环境并启动：
+<details>
+<summary>手动安装与启动</summary>
+
+在项目根目录打开 PowerShell：
 
 ```powershell
 py -3 -m venv .venv
-.venv/Scripts/python.exe -m pip install -r requirements.txt
-.venv/Scripts/python.exe run.py
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe run.py
 ```
 
-## 文件格式和使用流程
+</details>
 
-1. 准备一份 `.xlsx` 账单，包含「票号」「乘机人姓名」「项目名称」三列。票号按文本保存，以保留前导零。
-2. 选择若干 PDF 或一个发票文件夹。文件名格式为「乘机人姓名-完整票号.pdf」，例如 `示例乘机人-123-4567890123.pdf`。
-3. 点击「开始匹配」。工具按姓名和完整票号精确查找 PDF，按项目归组。展开项目或异常清单可以核对结果，点击账单名可下载该任务保存的 Excel。
-4. 导出可归集的项目。一个项目中有任意一行异常时，该项目整体暂缓导出。其他匹配完整的项目可以继续。
-5. 下载单个项目 PDF，或下载包含项目 PDF、归集明细及异常与清洗记录的 ZIP。
+## 准备文件
 
-Excel 表头支持别名，如「电子客票号」「员工姓名」「项目编号」。如果发现多张符合条件的工作表，把需要处理的那张单独另存再导入。详细规则见 [匹配规则](docs/requirements.md)。
+账单使用 `.xlsx` 格式，包含以下三列。PDF 文件名使用「乘机人姓名-完整票号.pdf」。下面是两条虚构记录：
 
-## 数据位置
+| 票号 | 乘机人姓名 | 项目名称 | 对应的 PDF 文件名 |
+| --- | --- | --- | --- |
+| `001-1234567801` | 示例乘机人甲 | 项目 A | `示例乘机人甲-001-1234567801.pdf` |
+| `001-1234567802` | 示例乘机人乙 | 项目 A | `示例乘机人乙-001-1234567802.pdf` |
 
-服务只监听本机回环地址。上传副本、SQLite 数据库和生成结果默认保存在项目的 `data/` 目录。可通过 `INVOICE_DATA_DIR` 环境变量选择其他私有目录。源文件保持原样。详见 [安全与数据边界](docs/security.md)。
+将票号列保存为文本，避免丢失开头的 `0`。表头也支持「电子客票号」「员工姓名」「项目编号」等别名。如果有多张符合条件的工作表，将目标工作表另存为单独的 Excel 再导入。[查看完整匹配规则](docs/requirements.md)
 
-## 源码和测试
+## 从导入到下载
 
-- `invoice_tool/parsing.py` 读取 Excel 并规范化票号与文件名。
-- `invoice_tool/matching.py` 执行精确匹配，汇总项目和异常。
-- `invoice_tool/pdf_service.py` 使用 pypdf 合并并校验 PDF，生成 CSV 和 ZIP。
-- `invoice_tool/api.py` 提供 Flask 接口，`services.py` 管理任务，`repository.py` 保存历史。
-- `invoice_tool/templates/` 和 `invoice_tool/static/` 包含浏览器界面。
+1. **选择资料** · 选一份账单，再选多份 PDF 或整个发票文件夹。
+2. **核对匹配** · 点击「开始匹配」，展开项目查看明细。缺件、重复或归属冲突会单独标出。点击账单文件名，可下载该任务保存的 Excel 副本。
+3. **导出归集** · 资料齐全的项目各生成一份 PDF，页面顺序跟随账单行顺序。只要一个项目有异常行，该项目就会暂缓导出。
 
-测试会临时生成账单和 PDF，可以直接在没有业务数据的环境运行：
+可以单独下载项目 PDF，也可以下载全部结果：
+
+```text
+项目发票.zip
+├── g001_项目 A.pdf
+├── 归集明细.csv
+└── 异常与清洗记录.csv
+```
+
+## 数据保存在本机
+
+服务只监听本机回环地址。上传副本、SQLite 任务记录和导出结果默认保存在 `data/`，原始文件保留原样。可以从「历史任务」重新打开以前的结果，也可以通过 `INVOICE_DATA_DIR` 指定其他私有数据目录。[查看安全与数据边界](docs/security.md)
+
+## 开发与测试
+
+| 想了解什么 | 从哪里读起 |
+| --- | --- |
+| Excel 表头、票号和文件名解析 | [parsing.py](invoice_tool/parsing.py) |
+| 精确匹配、项目分组和异常判断 | [matching.py](invoice_tool/matching.py) |
+| PDF 合并与 CSV、ZIP 生成 | [pdf_service.py](invoice_tool/pdf_service.py) |
+| Flask 接口、任务处理和 SQLite 历史 | [api.py](invoice_tool/api.py)、[services.py](invoice_tool/services.py)、[repository.py](invoice_tool/repository.py) |
+| 浏览器界面 | [templates](invoice_tool/templates/) 和 [static](invoice_tool/static/) |
+
+测试使用临时生成的账单和 PDF。在完成安装后，从项目根目录运行：
 
 ```powershell
-.venv/Scripts/python.exe -m pip install -r requirements-dev.txt
-.venv/Scripts/python.exe -m ruff check .
-.venv/Scripts/python.exe -m unittest discover -v
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m ruff check .
+.\.venv\Scripts\python.exe -m unittest discover -v
 ```
